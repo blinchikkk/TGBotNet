@@ -30,7 +30,7 @@ def setup_logging():
         'error': {'color': 'red', 'bold': True}
     }
 
-    coloredlogs.install(level='INFO', fmt='[%(asctime)s | %(levelname)s] [XBIT TEAM] %(message)s', datefmt='%d.%m.%Y %H:%M:%S', handlers=[console_out])
+    coloredlogs.install(level='INFO', fmt='[%(asctime)s | %(levelname)s] %(message)s', datefmt='%d.%m.%Y %H:%M:%S', handlers=[console_out])
 
     async def log(message: str) -> str:
         logging.info(message)

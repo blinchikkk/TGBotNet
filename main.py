@@ -85,14 +85,14 @@ class BotNet:
         elif choice == 1:
             fc.clear_console()
             await console.log("Список аккаунтов...")
-            session = self.Session()
-            accounts = session.query(Account).all()
-            if accounts:
-                for account in accounts:
-                    status = "Работает" if account.status else "Не работает"
-                    print(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
-            else:
-                print("Нет добавленных аккаунтов.")
+            async with self.Session() as session:
+                accounts = session.query(Account).all()
+                if accounts:
+                    for account in accounts:
+                        status = "Работает" if account.status else "Не работает"
+                        print(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
+                else:
+                    print("Нет добавленных аккаунтов.")
             input("\nНажмите Enter для продолжения...")
         elif choice == 2:
             fc.clear_console()
@@ -122,18 +122,18 @@ class BotNet:
                     last_name = me.last_name
 
                     print(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
-                    session = self.Session()
-                    new_account = Account(
-                        app_id=app_id,
-                        hash_id=hash_id,
-                        username=username,
-                        user_id=user_id,
-                        first_name=first_name,
-                        last_name=last_name,
-                        status=True
-                    )
-                    session.add(new_account)
-                    session.commit()
+                    async with self.Session() as session:
+                        new_account = Account(
+                            app_id=app_id,
+                            hash_id=hash_id,
+                            username=username,
+                            user_id=user_id,
+                            first_name=first_name,
+                            last_name=last_name,
+                            status=True
+                        )
+                        session.add(new_account)
+                        await session.commit()
                     await console.log("Аккаунт добавлен.")
                 except Exception as e:
                     await console.error(f"Ошибка регистрации: {e}")
@@ -142,14 +142,14 @@ class BotNet:
             fc.clear_console()
             await console.log("Удаление аккаунта...")
             account_id = int(input("Введите id аккаунта для удаления >> "))
-            session = self.Session()
-            account_to_delete = session.query(Account).filter(Account.id == account_id).first()
-            if account_to_delete:
-                session.delete(account_to_delete)
-                session.commit()
-                await console.log("Аккаунт удален.")
-            else:
-                await console.error("Аккаунт не найден.")
+            async with self.Session() as session:
+                account_to_delete = session.query(Account).filter(Account.id == account_id).first()
+                if account_to_delete:
+                    session.delete(account_to_delete)
+                    await session.commit()
+                    await console.log("Аккаунт удален.")
+                else:
+                    await console.error("Аккаунт не найден.")
             input("\nНажмите Enter для продолжения...")
         else:
             await console.warning("Неверный выбор. Пожалуйста, попробуйте снова.")
