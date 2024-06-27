@@ -39,6 +39,8 @@ class BotNet:
         # Используем абсолютный путь к alembic.ini
         script_dir = os.path.dirname(os.path.abspath(__file__))
         alembic_ini_path = os.path.join(script_dir, 'alembic.ini')
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        sys.path.append(current_dir)
         
         alembic_args = [
             '--raiseerr',
