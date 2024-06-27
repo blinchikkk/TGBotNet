@@ -8,6 +8,7 @@ from telethon import TelegramClient, errors, functions
 from typing import List, Tuple
 import asyncio
 import os
+import sys
 import alembic.config
 
 class BotNet:
