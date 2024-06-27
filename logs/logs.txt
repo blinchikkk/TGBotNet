@@ -260,3 +260,6 @@
 [27.06.2024 14:53:05 | INFO] [XBIT TEAM] Failed to load SSL library: <class 'OSError'> (no library called "ssl" found)
 [27.06.2024 14:53:05 | INFO] [XBIT TEAM] cryptg module not installed and libssl not found, falling back to (slower) Python encryption
 [27.06.2024 14:53:05 | INFO] [XBIT TEAM] Иницилизация БД...
+[27.06.2024 14:55:19 | INFO] [XBIT TEAM] Failed to load SSL library: <class 'OSError'> (no library called "ssl" found)
+[27.06.2024 14:55:19 | INFO] [XBIT TEAM] cryptg module not installed and libssl not found, falling back to (slower) Python encryption
+[27.06.2024 14:55:19 | INFO] [XBIT TEAM] Иницилизация БД...

@@ -85,7 +85,8 @@ class BotNet:
         elif choice == 1:
             fc.clear_console()
             await console.log("Список аккаунтов...")
-            async with self.Session() as session:
+            session = self.Session()
+            try:
                 accounts = session.query(Account).all()
                 if accounts:
                     for account in accounts:
@@ -93,6 +94,8 @@ class BotNet:
                         print(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
                 else:
                     print("Нет добавленных аккаунтов.")
+            finally:
+                session.close()
             input("\nНажмите Enter для продолжения...")
         elif choice == 2:
             fc.clear_console()
@@ -122,7 +125,8 @@ class BotNet:
                     last_name = me.last_name
 
                     print(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
-                    async with self.Session() as session:
+                    session = self.Session()
+                    try:
                         new_account = Account(
                             app_id=app_id,
                             hash_id=hash_id,
@@ -133,8 +137,10 @@ class BotNet:
                             status=True
                         )
                         session.add(new_account)
-                        await session.commit()
-                    await console.log("Аккаунт добавлен.")
+                        session.commit()
+                        await console.log("Аккаунт добавлен.")
+                    finally:
+                        session.close()
                 except Exception as e:
                     await console.error(f"Ошибка регистрации: {e}")
             input("\nНажмите Enter для продолжения...")
@@ -142,14 +148,17 @@ class BotNet:
             fc.clear_console()
             await console.log("Удаление аккаунта...")
             account_id = int(input("Введите id аккаунта для удаления >> "))
-            async with self.Session() as session:
+            session = self.Session()
+            try:
                 account_to_delete = session.query(Account).filter(Account.id == account_id).first()
                 if account_to_delete:
                     session.delete(account_to_delete)
-                    await session.commit()
+                    session.commit()
                     await console.log("Аккаунт удален.")
                 else:
                     await console.error("Аккаунт не найден.")
+            finally:
+                session.close()
             input("\nНажмите Enter для продолжения...")
         else:
             await console.warning("Неверный выбор. Пожалуйста, попробуйте снова.")
