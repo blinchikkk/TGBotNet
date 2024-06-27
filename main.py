@@ -3,7 +3,7 @@ from engine import menu
 from engine import functions as fc
 from engine.models import Account, Base
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session as SessionType
+from sqlalchemy.orm import sessionmaker
 from telethon import TelegramClient, errors, functions
 from typing import List, Tuple
 import asyncio
@@ -45,16 +45,16 @@ class BotNet:
     async def main(self) -> None:
         while not self.exit:
             fc.clear_console()
-            await self.print_menu(menu.main_menu)
+            self.print_menu(menu.main_menu)
             answer = self.get_user_choice()
 
             fc.clear_console()
             await self.handle_choice(answer)
 
-    async def print_menu(self, menu: str) -> None:
-        await console.log("=" * 30)
-        await console.log(menu)
-        await console.log("=" * 30)
+    def print_menu(self, menu: str) -> None:
+        print("=" * 30)
+        print(menu)
+        print("=" * 30)
 
     def get_user_choice(self) -> int:
         try:
@@ -69,14 +69,14 @@ class BotNet:
         elif choice == 1:
             while True:
                 fc.clear_console()
-                await self.print_menu(menu.control_accounts)
+                self.print_menu(menu.control_accounts)
                 answer = self.get_user_choice()
                 if await self.handle_account_choice(answer):
                     break
         elif choice == 2:
             while True:
                 fc.clear_console()
-                await self.print_menu(menu.functions_menu)
+                self.print_menu(menu.functions_menu)
                 answer = self.get_user_choice()
                 if await self.handle_functions_choice(answer):
                     break
@@ -90,14 +90,15 @@ class BotNet:
         elif choice == 1:
             fc.clear_console()
             await console.log("Список аккаунтов...")
-            async with self.Session() as session:
-                accounts: List[Account] = session.query(Account).all()
-                if accounts:
-                    for account in accounts:
-                        status = "Работает" if account.status else "Не работает"
-                        await console.log(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
-                else:
-                    await console.log("Нет добавленных аккаунтов.")
+            session = self.Session()
+            accounts: List[Account] = session.query(Account).all()
+            if accounts:
+                for account in accounts:
+                    status = "Работает" if account.status else "Не работает"
+                    print(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
+            else:
+                print("Нет добавленных аккаунтов.")
+            session.close()
             input("\nНажмите Enter для продолжения...")
         elif choice == 2:
             fc.clear_console()
@@ -126,20 +127,21 @@ class BotNet:
                     first_name = me.first_name
                     last_name = me.last_name
 
-                    await console.log(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
-                    async with self.Session() as session:
-                        new_account = Account(
-                            app_id=app_id,
-                            hash_id=hash_id,
-                            username=username,
-                            user_id=user_id,
-                            first_name=first_name,
-                            last_name=last_name,
-                            status=True
-                        )
-                        session.add(new_account)
-                        await session.commit()
-                        await console.log("Аккаунт добавлен.")
+                    print(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
+                    session = self.Session()
+                    new_account = Account(
+                        app_id=app_id,
+                        hash_id=hash_id,
+                        username=username,
+                        user_id=user_id,
+                        first_name=first_name,
+                        last_name=last_name,
+                        status=True
+                    )
+                    session.add(new_account)
+                    session.commit()
+                    session.close()
+                    await console.log("Аккаунт добавлен.")
                 except Exception as e:
                     await console.error(f"Ошибка регистрации: {e}")
             input("\nНажмите Enter для продолжения...")
@@ -147,14 +149,15 @@ class BotNet:
             fc.clear_console()
             await console.log("Удаление аккаунта...")
             account_id = int(input("Введите id аккаунта для удаления >> "))
-            async with self.Session() as session:
-                account_to_delete = session.query(Account).filter(Account.id == account_id).first()
-                if account_to_delete:
-                    session.delete(account_to_delete)
-                    await session.commit()
-                    await console.log("Аккаунт удален.")
-                else:
-                    await console.error("Аккаунт не найден.")
+            session = self.Session()
+            account_to_delete = session.query(Account).filter(Account.id == account_id).first()
+            if account_to_delete:
+                session.delete(account_to_delete)
+                session.commit()
+                await console.log("Аккаунт удален.")
+            else:
+                await console.error("Аккаунт не найден.")
+            session.close()
             input("\nНажмите Enter для продолжения...")
         else:
             await console.warning("Неверный выбор. Пожалуйста, попробуйте снова.")
@@ -167,7 +170,7 @@ class BotNet:
 
         elif choice == 1:
             fc.clear_console()
-            await console.log("Подписка на канал...")
+            print("Подписка на канал...")
             channel = input("Введите username или ссылку на канал >> ")
 
             async def process_account(account: Account, channel: str) -> None:
@@ -177,24 +180,25 @@ class BotNet:
                     try:
                         await client.connect()
                         if not await client.is_user_authorized():
-                            await console.log(f"Аккаунт {account.username} не авторизован.")
+                            print(f"Аккаунт {account.username} не авторизован.")
                             return
                         await client(functions.channels.JoinChannelRequest(channel))
-                        await console.log(f"Аккаунт {account.username} подписался на {channel}.")
+                        print(f"Аккаунт {account.username} подписался на {channel}.")
                     except errors.FloodWaitError as e:
-                        await console.warning(f"Аккаунт {account.username} попал в флуд-контроль. Нужно подождать {e.seconds} секунд.")
+                        print(f"Аккаунт {account.username} попал в флуд-контроль. Нужно подождать {e.seconds} секунд.")
                     except errors.TelegramAPIError as e:
-                        await console.error(f"Ошибка с аккаунтом {account.username}: {e}")
+                        print(f"Ошибка с аккаунтом {account.username}: {e}")
                     except Exception as e:
-                        await console.error(f"Неизвестная ошибка с аккаунтом {account.username}: {e}")
+                        print(f"Неизвестная ошибка с аккаунтом {account.username}: {e}")
 
-            async with self.Session() as session:
-                accounts: List[Account] = session.query(Account).all()
-                if accounts:
-                    tasks = [process_account(account, channel) for account in accounts]
-                    await asyncio.gather(*tasks)
-                else:
-                    await console.log("Нет добавленных аккаунтов.")
+            session = self.Session()
+            accounts: List[Account] = session.query(Account).all()
+            if accounts:
+                tasks = [process_account(account, channel) for account in accounts]
+                await asyncio.gather(*tasks)
+            else:
+                print("Нет добавленных аккаунтов.")
+            session.close()
 
             input("\nНажмите Enter для продолжения...")
         else:
