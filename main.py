@@ -4,8 +4,7 @@ from engine import functions as fc
 from engine.models import Account, Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from telethon import TelegramClient
-import telethon
+from telethon import TelegramClient, errors, functions
 import asyncio
 import os
 import alembic.config
@@ -74,7 +73,12 @@ class BotNet:
                 if await self.handle_account_choice(answer):
                     break
         elif choice == 2:
-            await console.warning("Эта функция в разработке!")
+            while True:
+                fc.clear_console()
+                self.print_menu(menu.functions_menu)
+                answer = self.get_user_choice()
+                if await self.handle_functions_choice(answer):
+                    break
         else:
             await console.warning("Неверный выбор. Пожалуйста, попробуйте снова.")
 
@@ -85,8 +89,7 @@ class BotNet:
         elif choice == 1:
             fc.clear_console()
             await console.log("Список аккаунтов...")
-            session = self.Session()
-            try:
+            async with self.Session() as session:
                 accounts = session.query(Account).all()
                 if accounts:
                     for account in accounts:
@@ -94,8 +97,6 @@ class BotNet:
                         print(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
                 else:
                     print("Нет добавленных аккаунтов.")
-            finally:
-                session.close()
             input("\nНажмите Enter для продолжения...")
         elif choice == 2:
             fc.clear_console()
@@ -114,7 +115,7 @@ class BotNet:
                         code = input("Введите код, полученный по SMS: ")
                         try:
                             await client.sign_in(phone_number, code)
-                        except telethon.errors.SessionPasswordNeededError:
+                        except errors.SessionPasswordNeededError:
                             password = input('Введите пароль: ')
                             await client.sign_in(password=password)
                     
@@ -125,8 +126,7 @@ class BotNet:
                     last_name = me.last_name
 
                     print(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
-                    session = self.Session()
-                    try:
+                    async with self.Session() as session:
                         new_account = Account(
                             app_id=app_id,
                             hash_id=hash_id,
@@ -137,10 +137,8 @@ class BotNet:
                             status=True
                         )
                         session.add(new_account)
-                        session.commit()
+                        await session.commit()
                         await console.log("Аккаунт добавлен.")
-                    finally:
-                        session.close()
                 except Exception as e:
                     await console.error(f"Ошибка регистрации: {e}")
             input("\nНажмите Enter для продолжения...")
@@ -148,17 +146,55 @@ class BotNet:
             fc.clear_console()
             await console.log("Удаление аккаунта...")
             account_id = int(input("Введите id аккаунта для удаления >> "))
-            session = self.Session()
-            try:
+            async with self.Session() as session:
                 account_to_delete = session.query(Account).filter(Account.id == account_id).first()
                 if account_to_delete:
                     session.delete(account_to_delete)
-                    session.commit()
+                    await session.commit()
                     await console.log("Аккаунт удален.")
                 else:
                     await console.error("Аккаунт не найден.")
-            finally:
-                session.close()
+            input("\nНажмите Enter для продолжения...")
+        else:
+            await console.warning("Неверный выбор. Пожалуйста, попробуйте снова.")
+            return False
+        return False
+
+    async def handle_functions_choice(self, choice):
+        if choice == 0:
+            return True  # Возвращаемся в главное меню
+
+        elif choice == 1:
+            fc.clear_console()
+            await console.log("Подписка на канал...")
+            channel = input("Введите username или ссылку на канал >> ")
+
+            async def process_account(account, channel):
+                session_file = os.path.join(self.session_path, f"{account.username}.session")
+                client = TelegramClient(session_file, int(account.app_id), account.hash_id)
+                async with client:
+                    try:
+                        await client.connect()
+                        if not await client.is_user_authorized():
+                            print(f"Аккаунт {account.username} не авторизован.")
+                            return
+                        await client(functions.channels.JoinChannelRequest(channel))
+                        print(f"Аккаунт {account.username} подписался на {channel}.")
+                    except errors.FloodWaitError as e:
+                        print(f"Аккаунт {account.username} попал в флуд-контроль. Нужно подождать {e.seconds} секунд.")
+                    except errors.TelegramAPIError as e:
+                        print(f"Ошибка с аккаунтом {account.username}: {e}")
+                    except Exception as e:
+                        print(f"Неизвестная ошибка с аккаунтом {account.username}: {e}")
+
+            async with self.Session() as session:
+                accounts = session.query(Account).all()
+                if accounts:
+                    tasks = [process_account(account, channel) for account in accounts]
+                    await asyncio.gather(*tasks)
+                else:
+                    print("Нет добавленных аккаунтов.")
+
             input("\nНажмите Enter для продолжения...")
         else:
             await console.warning("Неверный выбор. Пожалуйста, попробуйте снова.")
