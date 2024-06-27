@@ -3,7 +3,7 @@ from engine import menu
 from engine import functions as fc
 from engine.models import Account, Base
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session as SessionType
 from telethon import TelegramClient, errors, functions
 from typing import List, Tuple
 import asyncio
@@ -95,10 +95,10 @@ class BotNet:
             if accounts:
                 for account in accounts:
                     status = "Работает" if account.status else "Не работает"
-                    print(f"[{account.id}] {account.phone_number} | {account.username} | {account.first_name} {account.last_name} | {status}")
+                    name = account.first_name + " " + account.last_name if account.last_name else account.first_name
+                    print(f"[{account.id}] {account.username} | {name} | {status}")
             else:
                 print("Нет добавленных аккаунтов.")
-            session.close()
             input("\nНажмите Enter для продолжения...")
         elif choice == 2:
             fc.clear_console()
@@ -132,16 +132,15 @@ class BotNet:
                     new_account = Account(
                         app_id=app_id,
                         hash_id=hash_id,
-                        phone_number=phone_number,
                         username=username,
                         user_id=user_id,
                         first_name=first_name,
                         last_name=last_name,
+                        phone_number=phone_number,  # Добавляем номер телефона в БД
                         status=True
                     )
                     session.add(new_account)
                     session.commit()
-                    session.close()
                     await console.log("Аккаунт добавлен.")
                 except Exception as e:
                     await console.error(f"Ошибка регистрации: {e}")
@@ -158,7 +157,6 @@ class BotNet:
                 await console.log("Аккаунт удален.")
             else:
                 await console.error("Аккаунт не найден.")
-            session.close()
             input("\nНажмите Enter для продолжения...")
         else:
             await console.warning("Неверный выбор. Пожалуйста, попробуйте снова.")
@@ -171,7 +169,7 @@ class BotNet:
 
         elif choice == 1:
             fc.clear_console()
-            print("Подписка на канал...")
+            await console.log("Подписка на канал...")
             channel = input("Введите username или ссылку на канал >> ")
 
             async def process_account(account: Account, channel: str) -> None:
@@ -199,7 +197,6 @@ class BotNet:
                 await asyncio.gather(*tasks)
             else:
                 print("Нет добавленных аккаунтов.")
-            session.close()
 
             input("\nНажмите Enter для продолжения...")
         else:
