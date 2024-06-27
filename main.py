@@ -45,16 +45,20 @@ class BotNet:
     async def main(self) -> None:
         while not self.exit:
             fc.clear_console()
-            self.print_menu(menu.main_menu)
+            self.print_menu(menu.main_menu, True)
             answer = self.get_user_choice()
 
             fc.clear_console()
             await self.handle_choice(answer)
 
-    def print_menu(self, menu: str) -> None:
-        print("=" * 30)
+    def print_menu(self, menu: str, is_main_menu: bool = False) -> None:
+        if is_main_menu:
+
+            print("========= Version 1.0 BETA ==========")
+        else:
+            print("=" * 36)
         print(menu)
-        print("=" * 30)
+        print("=" * 36)
 
     def get_user_choice(self) -> int:
         try:
@@ -90,15 +94,14 @@ class BotNet:
         elif choice == 1:
             fc.clear_console()
             await console.log("Список аккаунтов...")
-            session = self.Session()
-            accounts: List[Account] = session.query(Account).all()
-            if accounts:
-                for account in accounts:
-                    status = "Работает" if account.status else "Не работает"
-                    name = account.first_name + " " + account.last_name if account.last_name else account.first_name
-                    print(f"[{account.id}] {account.username} | {name} | {status}")
-            else:
-                print("Нет добавленных аккаунтов.")
+            with self.Session() as session:
+                accounts: List[Account] = session.query(Account).all()
+                if accounts:
+                    for account in accounts:
+                        status = "Работает" if account.status else "Не работает"
+                        print(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
+                else:
+                    print("Нет добавленных аккаунтов.")
             input("\nНажмите Enter для продолжения...")
         elif choice == 2:
             fc.clear_console()
@@ -128,20 +131,20 @@ class BotNet:
                     last_name = me.last_name
 
                     print(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
-                    session = self.Session()
-                    new_account = Account(
-                        app_id=app_id,
-                        hash_id=hash_id,
-                        username=username,
-                        user_id=user_id,
-                        first_name=first_name,
-                        last_name=last_name,
-                        phone_number=phone_number,  # Добавляем номер телефона в БД
-                        status=True
-                    )
-                    session.add(new_account)
-                    session.commit()
-                    await console.log("Аккаунт добавлен.")
+                    with self.Session() as session:
+                        new_account = Account(
+                            app_id=app_id,
+                            hash_id=hash_id,
+                            username=username,
+                            user_id=user_id,
+                            first_name=first_name,
+                            last_name=last_name,
+                            phone_number=phone_number,
+                            status=True
+                        )
+                        session.add(new_account)
+                        session.commit()
+                        await console.log("Аккаунт добавлен.")
                 except Exception as e:
                     await console.error(f"Ошибка регистрации: {e}")
             input("\nНажмите Enter для продолжения...")
@@ -149,14 +152,14 @@ class BotNet:
             fc.clear_console()
             await console.log("Удаление аккаунта...")
             account_id = int(input("Введите id аккаунта для удаления >> "))
-            session = self.Session()
-            account_to_delete = session.query(Account).filter(Account.id == account_id).first()
-            if account_to_delete:
-                session.delete(account_to_delete)
-                session.commit()
-                await console.log("Аккаунт удален.")
-            else:
-                await console.error("Аккаунт не найден.")
+            with self.Session() as session:
+                account_to_delete = session.query(Account).filter(Account.id == account_id).first()
+                if account_to_delete:
+                    session.delete(account_to_delete)
+                    session.commit()
+                    await console.log("Аккаунт удален.")
+                else:
+                    await console.error("Аккаунт не найден.")
             input("\nНажмите Enter для продолжения...")
         else:
             await console.warning("Неверный выбор. Пожалуйста, попробуйте снова.")
@@ -190,13 +193,13 @@ class BotNet:
                     except Exception as e:
                         print(f"Неизвестная ошибка с аккаунтом {account.username}: {e}")
 
-            session = self.Session()
-            accounts: List[Account] = session.query(Account).all()
-            if accounts:
-                tasks = [process_account(account, channel) for account in accounts]
-                await asyncio.gather(*tasks)
-            else:
-                print("Нет добавленных аккаунтов.")
+            with self.Session() as session:
+                accounts: List[Account] = session.query(Account).all()
+                if accounts:
+                    tasks = [process_account(account, channel) for account in accounts]
+                    await asyncio.gather(*tasks)
+                else:
+                    print("Нет добавленных аккаунтов.")
 
             input("\nНажмите Enter для продолжения...")
         else:
