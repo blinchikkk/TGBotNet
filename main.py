@@ -95,7 +95,8 @@ class BotNet:
             if accounts:
                 for account in accounts:
                     status = "Работает" if account.status else "Не работает"
-                    print(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
+                    name = account.first_name + " " + account.last_name if account.last_name else account.first_name
+                    print(f"[{account.id}] @{account.username} | {name} | {status}")
             else:
                 print("Нет добавленных аккаунтов.")
             session.close()

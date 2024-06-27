@@ -13,4 +13,5 @@ class Account(Base):
     user_id = Column(BigInteger)
     first_name = Column(String)
     last_name = Column(String)
+    phone_number = Column(String, nullable=False)
     status = Column(Boolean, nullable=False)

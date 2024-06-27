@@ -12,7 +12,7 @@ def generate_db_path():
             return os.path.join(botnet_folder, 'database.db')
     raise Exception("No available drives found.")
 
-if __name__ == "__main__":
+def run_migrations():
     db_path = generate_db_path()
     os.environ['DB_PATH'] = db_path
 
@@ -21,3 +21,6 @@ if __name__ == "__main__":
         'upgrade', 'head'
     ]
     alembic.config.main(argv=alembic_args)
+
+if __name__ == "__main__":
+    run_migrations()
