@@ -45,16 +45,16 @@ class BotNet:
     async def main(self) -> None:
         while not self.exit:
             fc.clear_console()
-            await self.print_menu(menu.main_menu)
+            self.print_menu(menu.main_menu)
             answer = self.get_user_choice()
 
             fc.clear_console()
             await self.handle_choice(answer)
 
-    async def print_menu(self, menu: str) -> None:
-        await console.log("=" * 30)
-        await console.log(menu)
-        await console.log("=" * 30)
+    def print_menu(self, menu: str) -> None:
+        print("=" * 30)
+        print(menu)
+        print("=" * 30)
 
     def get_user_choice(self) -> int:
         try:
@@ -69,14 +69,14 @@ class BotNet:
         elif choice == 1:
             while True:
                 fc.clear_console()
-                await self.print_menu(menu.control_accounts)
+                self.print_menu(menu.control_accounts)
                 answer = self.get_user_choice()
                 if await self.handle_account_choice(answer):
                     break
         elif choice == 2:
             while True:
                 fc.clear_console()
-                await self.print_menu(menu.functions_menu)
+                self.print_menu(menu.functions_menu)
                 answer = self.get_user_choice()
                 if await self.handle_functions_choice(answer):
                     break
@@ -95,9 +95,9 @@ class BotNet:
                 if accounts:
                     for account in accounts:
                         status = "Работает" if account.status else "Не работает"
-                        await console.log(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
+                        print(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
                 else:
-                    await console.log("Нет добавленных аккаунтов.")
+                    print("Нет добавленных аккаунтов.")
             input("\nНажмите Enter для продолжения...")
         elif choice == 2:
             fc.clear_console()
@@ -126,7 +126,7 @@ class BotNet:
                     first_name = me.first_name
                     last_name = me.last_name
 
-                    await console.log(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
+                    print(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
                     async with self.Session() as session:
                         new_account = Account(
                             app_id=app_id,
@@ -177,16 +177,16 @@ class BotNet:
                     try:
                         await client.connect()
                         if not await client.is_user_authorized():
-                            await console.log(f"Аккаунт {account.username} не авторизован.")
+                            print(f"Аккаунт {account.username} не авторизован.")
                             return
                         await client(functions.channels.JoinChannelRequest(channel))
-                        await console.log(f"Аккаунт {account.username} подписался на {channel}.")
+                        print(f"Аккаунт {account.username} подписался на {channel}.")
                     except errors.FloodWaitError as e:
-                        await console.warning(f"Аккаунт {account.username} попал в флуд-контроль. Нужно подождать {e.seconds} секунд.")
+                        print(f"Аккаунт {account.username} попал в флуд-контроль. Нужно подождать {e.seconds} секунд.")
                     except errors.TelegramAPIError as e:
-                        await console.error(f"Ошибка с аккаунтом {account.username}: {e}")
+                        print(f"Ошибка с аккаунтом {account.username}: {e}")
                     except Exception as e:
-                        await console.error(f"Неизвестная ошибка с аккаунтом {account.username}: {e}")
+                        print(f"Неизвестная ошибка с аккаунтом {account.username}: {e}")
 
             async with self.Session() as session:
                 accounts: List[Account] = session.query(Account).all()
@@ -194,7 +194,7 @@ class BotNet:
                     tasks = [process_account(account, channel) for account in accounts]
                     await asyncio.gather(*tasks)
                 else:
-                    await console.log("Нет добавленных аккаунтов.")
+                    print("Нет добавленных аккаунтов.")
 
             input("\nНажмите Enter для продолжения...")
         else:
