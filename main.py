@@ -3,21 +3,22 @@ from engine import menu
 from engine import functions as fc
 from engine.models import Account, Base
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session as SessionType
 from telethon import TelegramClient, errors, functions
+from typing import List, Tuple
 import asyncio
 import os
 import alembic.config
 
 class BotNet:
-    def __init__(self):
+    def __init__(self) -> None:
         self.exit = False
         self.db_path, self.session_path = self.generate_paths()
         os.environ['DB_PATH'] = self.db_path  # Установка переменной окружения
         self.engine = create_engine(f'sqlite:///{self.db_path}')
         self.Session = sessionmaker(bind=self.engine)
 
-    def generate_paths(self):
+    def generate_paths(self) -> Tuple[str, str]:
         # Проверка наличия дисков и создание папки BotNet
         for drive_letter in range(ord('C'), ord('Z') + 1):
             drive = f"{chr(drive_letter)}:\\"
@@ -34,55 +35,55 @@ class BotNet:
                 return db_path, session_folder
         raise Exception("No available drives found.")
 
-    def run_alembic_migrations(self):
+    def run_alembic_migrations(self) -> None:
         alembic_args = [
             '--raiseerr',
             'upgrade', 'head'
         ]
         alembic.config.main(argv=alembic_args)
 
-    async def main(self):
+    async def main(self) -> None:
         while not self.exit:
             fc.clear_console()
-            self.print_menu(menu.main_menu)
+            await self.print_menu(menu.main_menu)
             answer = self.get_user_choice()
 
             fc.clear_console()
             await self.handle_choice(answer)
 
-    def print_menu(self, menu):
-        print("=" * 30)
-        print(menu)
-        print("=" * 30)
+    async def print_menu(self, menu: str) -> None:
+        await console.log("=" * 30)
+        await console.log(menu)
+        await console.log("=" * 30)
 
-    def get_user_choice(self):
+    def get_user_choice(self) -> int:
         try:
             return int(input("Ваш выбор >> "))
         except ValueError:
             return -1  # Неверный выбор
 
-    async def handle_choice(self, choice):
+    async def handle_choice(self, choice: int) -> None:
         if choice == 0:
             await console.log("Досвидания!")
             self.exit = True
         elif choice == 1:
             while True:
                 fc.clear_console()
-                self.print_menu(menu.control_accounts)
+                await self.print_menu(menu.control_accounts)
                 answer = self.get_user_choice()
                 if await self.handle_account_choice(answer):
                     break
         elif choice == 2:
             while True:
                 fc.clear_console()
-                self.print_menu(menu.functions_menu)
+                await self.print_menu(menu.functions_menu)
                 answer = self.get_user_choice()
                 if await self.handle_functions_choice(answer):
                     break
         else:
             await console.warning("Неверный выбор. Пожалуйста, попробуйте снова.")
 
-    async def handle_account_choice(self, choice):
+    async def handle_account_choice(self, choice: int) -> bool:
         if choice == 0:
             return True  # Возвращаемся в главное меню
         
@@ -90,13 +91,13 @@ class BotNet:
             fc.clear_console()
             await console.log("Список аккаунтов...")
             async with self.Session() as session:
-                accounts = session.query(Account).all()
+                accounts: List[Account] = session.query(Account).all()
                 if accounts:
                     for account in accounts:
                         status = "Работает" if account.status else "Не работает"
-                        print(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
+                        await console.log(f"[{account.id}] {account.username} | {account.first_name} {account.last_name} | {status}")
                 else:
-                    print("Нет добавленных аккаунтов.")
+                    await console.log("Нет добавленных аккаунтов.")
             input("\nНажмите Enter для продолжения...")
         elif choice == 2:
             fc.clear_console()
@@ -125,7 +126,7 @@ class BotNet:
                     first_name = me.first_name
                     last_name = me.last_name
 
-                    print(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
+                    await console.log(f"Телеграм аккаунт для пользователя {username} зарегистрирован.")
                     async with self.Session() as session:
                         new_account = Account(
                             app_id=app_id,
@@ -160,7 +161,7 @@ class BotNet:
             return False
         return False
 
-    async def handle_functions_choice(self, choice):
+    async def handle_functions_choice(self, choice: int) -> bool:
         if choice == 0:
             return True  # Возвращаемся в главное меню
 
@@ -169,31 +170,31 @@ class BotNet:
             await console.log("Подписка на канал...")
             channel = input("Введите username или ссылку на канал >> ")
 
-            async def process_account(account, channel):
+            async def process_account(account: Account, channel: str) -> None:
                 session_file = os.path.join(self.session_path, f"{account.username}.session")
                 client = TelegramClient(session_file, int(account.app_id), account.hash_id)
                 async with client:
                     try:
                         await client.connect()
                         if not await client.is_user_authorized():
-                            print(f"Аккаунт {account.username} не авторизован.")
+                            await console.log(f"Аккаунт {account.username} не авторизован.")
                             return
                         await client(functions.channels.JoinChannelRequest(channel))
-                        print(f"Аккаунт {account.username} подписался на {channel}.")
+                        await console.log(f"Аккаунт {account.username} подписался на {channel}.")
                     except errors.FloodWaitError as e:
-                        print(f"Аккаунт {account.username} попал в флуд-контроль. Нужно подождать {e.seconds} секунд.")
+                        await console.warning(f"Аккаунт {account.username} попал в флуд-контроль. Нужно подождать {e.seconds} секунд.")
                     except errors.TelegramAPIError as e:
-                        print(f"Ошибка с аккаунтом {account.username}: {e}")
+                        await console.error(f"Ошибка с аккаунтом {account.username}: {e}")
                     except Exception as e:
-                        print(f"Неизвестная ошибка с аккаунтом {account.username}: {e}")
+                        await console.error(f"Неизвестная ошибка с аккаунтом {account.username}: {e}")
 
             async with self.Session() as session:
-                accounts = session.query(Account).all()
+                accounts: List[Account] = session.query(Account).all()
                 if accounts:
                     tasks = [process_account(account, channel) for account in accounts]
                     await asyncio.gather(*tasks)
                 else:
-                    print("Нет добавленных аккаунтов.")
+                    await console.log("Нет добавленных аккаунтов.")
 
             input("\nНажмите Enter для продолжения...")
         else:
@@ -201,7 +202,7 @@ class BotNet:
             return False
         return False
 
-    async def start(self):
+    async def start(self) -> None:
         await console.log("Иницилизация БД...")
         self.run_alembic_migrations()
         await console.log("Иницилизация BotNet завершена.")
