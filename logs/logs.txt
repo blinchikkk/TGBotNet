@@ -61,3 +61,9 @@
 [27.06.2024 17:09:42 | INFO] Failed to load SSL library: <class 'OSError'> (no library called "ssl" found)
 [27.06.2024 17:09:42 | INFO] cryptg module not installed and libssl not found, falling back to (slower) Python encryption
 [27.06.2024 17:09:42 | INFO] Иницилизация БД...
+[27.06.2024 17:10:10 | INFO] Failed to load SSL library: <class 'OSError'> (no library called "ssl" found)
+[27.06.2024 17:10:10 | INFO] cryptg module not installed and libssl not found, falling back to (slower) Python encryption
+[27.06.2024 17:10:10 | INFO] Иницилизация БД...
+[27.06.2024 17:12:01 | INFO] Failed to load SSL library: <class 'OSError'> (no library called "ssl" found)
+[27.06.2024 17:12:01 | INFO] cryptg module not installed and libssl not found, falling back to (slower) Python encryption
+[27.06.2024 17:12:01 | INFO] Иницилизация БД...

@@ -53,8 +53,9 @@ class BotNet:
 
     def print_menu(self, menu: str, is_main_menu: bool = False) -> None:
         if is_main_menu:
-
-            print("========= Version 1.0 BETA ==========")
+            print("=" * 36)
+            print("======= Version 1.0 BETA =======")
+            print("=" * 36)
         else:
             print("=" * 36)
         print(menu)
