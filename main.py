@@ -95,8 +95,7 @@ class BotNet:
             if accounts:
                 for account in accounts:
                     status = "Работает" if account.status else "Не работает"
-                    name = account.first_name + " " + account.last_name if account.last_name else account.first_name
-                    print(f"[{account.id}] @{account.username} | {name} | {status}")
+                    print(f"[{account.id}] {account.phone_number} | {account.username} | {account.first_name} {account.last_name} | {status}")
             else:
                 print("Нет добавленных аккаунтов.")
             session.close()
@@ -133,6 +132,7 @@ class BotNet:
                     new_account = Account(
                         app_id=app_id,
                         hash_id=hash_id,
+                        phone_number=phone_number,
                         username=username,
                         user_id=user_id,
                         first_name=first_name,
@@ -175,7 +175,7 @@ class BotNet:
             channel = input("Введите username или ссылку на канал >> ")
 
             async def process_account(account: Account, channel: str) -> None:
-                session_file = os.path.join(self.session_path, f"{account.username}.session")
+                session_file = os.path.join(self.session_path, f"{account.phone_number}.session")
                 client = TelegramClient(session_file, int(account.app_id), account.hash_id)
                 async with client:
                     try:
