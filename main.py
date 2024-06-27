@@ -36,8 +36,13 @@ class BotNet:
         raise Exception("No available drives found.")
 
     def run_alembic_migrations(self) -> None:
+        # Используем абсолютный путь к alembic.ini
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        alembic_ini_path = os.path.join(script_dir, 'alembic.ini')
+        
         alembic_args = [
             '--raiseerr',
+            '-c', alembic_ini_path,
             'upgrade', 'head'
         ]
         alembic.config.main(argv=alembic_args)
@@ -218,3 +223,4 @@ client = BotNet()
 
 if __name__ == "__main__":
     asyncio.run(client.start())
+    input()
