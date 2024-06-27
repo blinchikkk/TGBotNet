@@ -13,7 +13,7 @@ def setup_logging():
 
     # Настраиваем логирование
     logging.basicConfig(handlers=(file_log, console_out),
-                        format='[%(asctime)s | %(levelname)s] [XBIT TEAM] %(message)s',
+                        format='[%(asctime)s | %(levelname)s] %(message)s',
                         datefmt='%d.%m.%Y %H:%M:%S',
                         level=logging.INFO)
 
